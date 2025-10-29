@@ -535,7 +535,7 @@ const CatProfile = ({ weight, activityLevel, onWeightChange, onAttributeChange }
 };
 
 // Form to add a new meal
-const MealForm = ({ foods, onAddMeal, showMessage }) => {
+const MealForm = ({ foods, onAddMeal, showMessage, totalMER, totalMealPercent }) => {
   const [mealName, setMealName] = useState('');
   const [caloriePercent, setCaloriePercent] = useState('50');
 
@@ -660,7 +660,7 @@ const MealForm = ({ foods, onAddMeal, showMessage }) => {
         placeholder="e.g., Breakfast"
       />
       <Input
-        label="Share of Daily Calories"
+        label={`Share of Daily Calories (${(100 - totalMealPercent).toFixed(0)}% unallocated)`}
         type="number"
         value={caloriePercent}
         onChange={(e) => setCaloriePercent(e.target.value)}
@@ -677,7 +677,7 @@ const MealForm = ({ foods, onAddMeal, showMessage }) => {
         {foods.map(food => (
           <div key={food.id} className="space-y-2">
             <div className="flex justify-between items-center space-x-2">
-              <span className="text-gray-700 flex-1">{food.name}</span>
+              <span className="text-gray-700 flex-1">{food.name}: <span className="text-gray-600 font-medium">{((totalMER * (parseFloat(caloriePercent) / 100) * ((ratios[food.id] || 0) / 100)) / food.kcalPer100g * 100).toFixed(1)}g</span></span>
               {/* New number input for the ratio */}
               <div className="flex items-center space-x-1 w-28">
                 <input
@@ -706,23 +706,12 @@ const MealForm = ({ foods, onAddMeal, showMessage }) => {
         ))}
       </div>
 
-      {/* Total display */}
-      <div className="mt-4 p-3 bg-gray-100 rounded-lg text-center">
-        <span className="font-semibold text-gray-700">Total Split</span>
-        <h4 className={`text-2xl font-bold ${isTotalValid ? 'text-green-600' : 'text-red-600'}`}>
-          {totalRatioSum.toFixed(0)}%
-        </h4>
-        {!isTotalValid && (
-          <p className="text-red-600 text-sm mt-1">Total must be 100%</p>
-        )}
-      </div>
-
       <Button
         type="submit"
         variant="primary"
         disabled={!isTotalValid}
       >
-        Add Meal
+        {isTotalValid ? 'Add Meal' : `Total Split Must Be 100% (${totalRatioSum.toFixed(0)}%)`}
       </Button>
     </form>
   );
@@ -920,6 +909,8 @@ function App() {
               foods={foods}
               onAddMeal={handleAddMeal}
               showMessage={showMessage}
+              totalMER={totalMER}
+              totalMealPercent={totalMealPercent}
             />
             {meals.length > 0 && (
               <div className="mt-6 space-y-2">
