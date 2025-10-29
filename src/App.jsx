@@ -15,7 +15,11 @@ const FOOD_LIBRARY = [
   { id: 'orijen_original_cat', name: 'ORIJEN Original Cat', protein: 40, fat: 20, fibre: 3, ash: 8, moisture: 10 },
   { id: 'orijen_six_fish_cat', name: 'ORIJEN Six Fish Cat', protein: 40, fat: 19, fibre: 3, ash: 9, moisture: 10 },
   { id: 'royal_canin_dental_adult_dry_cat_food', name: 'ROYAL CANIN Dental Adult Dry Cat Food', protein: 29, fat: 15, fibre: 5.4, ash: 6.4, moisture: 8 },
-
+  { id: 'marro_succulent_chicken', name: 'Marro SUCCULENT CHICKEN', protein: 18, fat: 6, fibre: 0.5, ash: 2, moisture: 73.5, carbs: 0.00 },
+  { id: 'marro_tender_turkey', name: 'Marro TENDER TURKEY', protein: 18, fat: 6, fibre: 0.5, ash: 2, moisture: 73.5, carbs: 0.00 },
+  { id: 'marro_scrumptious_pork', name: 'Marro SCRUMPTIOUS PORK', protein: 18, fat: 8, fibre: 0.5, ash: 2, moisture: 71.5, carbs: 0.00 },
+  { id: 'marro_delish_fish', name: 'Marro DELISH FISH', protein: 17, fat: 8, fibre: 0.5, ash: 2, moisture: 72, carbs: 0.50 },
+  { id: 'marro_juicy_beef', name: 'Marro JUICY BEEF', protein: 15, fat: 9, fibre: 0.5, ash: 2, moisture: 72, carbs: 1.50 },
 ];
 
 
@@ -867,8 +871,8 @@ function App() {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {foods.map(food => (
-                      <tr 
-                        key={food.id} 
+                      <tr
+                        key={food.id}
                         className="hover:bg-gray-100 cursor-pointer"
                         onClick={() => handleCopyDetails(food)}
                         title="Copy details as code"
