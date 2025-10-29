@@ -30,7 +30,7 @@ const calculateKcal = (protein, fat, fibre, ash, moisture) => {
   }
 
   const carbs = 100 - sumOfParts;
-  
+
   const kcalFromProtein = proteinNum * 3.5;
   const kcalFromFat = fatNum * 8.5;
   const kcalFromCarbs = carbs * 3.5;
@@ -45,7 +45,7 @@ const calculateMER = (weight, activityLevel) => {
   if (isNaN(weightKg) || weightKg <= 0) return { rer: 0, mer: 0 };
 
   const rer = 70 * Math.pow(weightKg, 0.75);
-  
+
   let factor = 1.2; // Default
   switch (activityLevel) {
     case 'neutered':
@@ -105,8 +105,8 @@ const Button = ({ onClick, children, className = '', variant = 'primary', disabl
     danger: 'bg-red-500 hover:bg-red-600 text-white focus:ring-red-400',
   };
   return (
-    <button 
-      onClick={onClick} 
+    <button
+      onClick={onClick}
       className={`${baseStyle} ${variants[variant]} ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
       disabled={disabled}
     >
@@ -116,7 +116,7 @@ const Button = ({ onClick, children, className = '', variant = 'primary', disabl
 };
 
 // A styled input component
-const Input = ({ label, type, value, onChange, placeholder, min, step, adornment, inputClassName = '' }) => (
+const Input = ({ label, type, value, onChange, placeholder, min, step, adornment, inputClassName = '', onFocus, onBlur }) => (
   <div className="w-full">
     <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
     <div className="relative">
@@ -127,7 +127,9 @@ const Input = ({ label, type, value, onChange, placeholder, min, step, adornment
         placeholder={placeholder}
         min={min}
         step={step}
-        className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition-shadow duration-200 shadow-sm ${inputClassName}`}
+        onFocus={onFocus}
+        onBlur={onBlur}
+        className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition-shadow duration-200 shadow-sm bg-white text-gray-900 ${inputClassName}`}
       />
       {adornment && (
         <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -137,9 +139,6 @@ const Input = ({ label, type, value, onChange, placeholder, min, step, adornment
     </div>
   </div>
 );
-
-// A styled checkbox component
-// ... This component is no longer used, so it has been removed.
 
 // A styled slider component
 const Slider = ({ label, min, max, value, onChange, style }) => (
@@ -174,7 +173,7 @@ const Message = ({ message, type, onClose }) => {
     <div className={`fixed top-5 right-5 p-4 border rounded-lg ${colors[type]} shadow-lg z-50`} role="alert">
       <span className="block sm:inline">{message}</span>
       <button onClick={onClose} className="absolute top-0 bottom-0 right-0 px-4 py-3">
-        <svg className="fill-current h-6 w-6" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><title>Close</title><path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 2.651a1.2 1.2 0 1 1-1.697-1.697L8.18 10 5.53 7.349a1.2 1.2 0 1 1 1.697-1.697L10 8.18l2.651-2.651a1.2 1.2 0 1 1 1.697 1.697L11.819 10l2.651 2.651a1.2 1.2 0 0 1 0 1.698z"/></svg>
+        <svg className="fill-current h-6 w-6" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><title>Close</title><path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 2.651a1.2 1.2 0 1 1-1.697-1.697L8.18 10 5.53 7.349a1.2 1.2 0 1 1 1.697-1.697L10 8.18l2.651-2.651a1.2 1.2 0 1 1 1.697 1.697L11.819 10l2.651 2.651a1.2 1.2 0 0 1 0 1.698z" /></svg>
       </button>
     </div>
   );
@@ -188,9 +187,16 @@ const FoodLibrarySelector = ({ onAddFood, showMessage, currentFoods }) => {
   const currentFoodNames = useMemo(() => currentFoods.map(f => f.name), [currentFoods]);
 
   const filteredLibrary = useMemo(() => {
-    if (!searchTerm.trim()) return [];
+    const term = searchTerm.toLowerCase().trim();
+
+    // NEW: If search term is empty, show the full library (that hasn't been added)
+    if (!term) {
+      return FOOD_LIBRARY.filter(food => !currentFoodNames.includes(food.name));
+    }
+
+    // If search term is not empty, filter based on it
     return FOOD_LIBRARY.filter(food => {
-      const nameMatch = food.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const nameMatch = food.name.toLowerCase().includes(term);
       const notAdded = !currentFoodNames.includes(food.name);
       return nameMatch && notAdded;
     });
@@ -227,25 +233,38 @@ const FoodLibrarySelector = ({ onAddFood, showMessage, currentFoods }) => {
         label="Search Library"
         type="text"
         value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
+        onChange={(e) => {
+          setSearchTerm(e.target.value);
+          setShowDropdown(true); // Keep dropdown open while typing
+        }}
         placeholder="e.g., 'wet' or 'dry'"
         onFocus={() => setShowDropdown(true)}
-        onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+        onBlur={() => setTimeout(() => setShowDropdown(false), 200)} // Delay blur to allow click
       />
-      {showDropdown && filteredLibrary.length > 0 && (
-        <div className="absolute z-10 w-full max-h-60 overflow-y-auto bg-white rounded-lg shadow-xl border border-gray-200 mt-1 py-1">
-          {filteredLibrary.map(food => (
-            <div 
-              key={food.id} 
-              onClick={() => handleAddFromLibrary(food)}
-              className="flex justify-between items-center p-3 hover:bg-blue-50 cursor-pointer transition-colors duration-150"
-            >
-              <span className="text-gray-800 font-medium">{food.name}</span>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
-              </svg>
+      {/* MODIFICATION 1: Change render condition to just showDropdown */}
+      {showDropdown && (
+        <div className="absolute z-10 w-full max-h-60 overflow-y-auto bg-white rounded-xl shadow-2xl border border-gray-300 mt-1 py-2">
+          {/* MODIFICATION 2: Handle empty state inside */}
+          {filteredLibrary.length > 0 ? (
+            filteredLibrary.map(food => (
+              <div
+                key={food.id}
+                // MODIFICATION 3: Use onMouseDown to register click before blur
+                onMouseDown={() => handleAddFromLibrary(food)}
+                className="flex justify-between items-center p-3 hover:bg-blue-50 cursor-pointer transition-colors duration-150 border-b border-gray-100 last:border-b-0"
+              >
+                <span className="text-gray-800 font-medium">{food.name}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+            ))
+          ) : (
+            <div className="p-3 text-gray-500 text-center">
+              {/* Show different message based on why it's empty */}
+              {searchTerm ? "No results found." : "No library items to add."}
             </div>
-          ))}
+          )}
         </div>
       )}
     </div>
@@ -271,7 +290,7 @@ const FoodForm = ({ onAddFood, showMessage }) => {
       ash: /ash|cendra|cendres|ceniza/i,
       moisture: /moisture|humidité|humedad/i,
     };
-    
+
     const findValue = (regex) => {
       for (const line of lines) {
         if (regex.test(line)) {
@@ -356,7 +375,7 @@ const FoodForm = ({ onAddFood, showMessage }) => {
         onChange={(e) => setName(e.target.value)}
         placeholder="e.g., Chicken Dry Food"
       />
-      
+
       <div className="w-full">
         <label className="block text-sm font-medium text-gray-700 mb-1">Paste Analytical Constituents</label>
         <textarea
@@ -367,7 +386,7 @@ Crude protein 42%
 Fat content 15%
 Crude ash 10%
 ..."
-          className="w-full h-24 p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+          className="w-full h-24 p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white text-gray-900"
         />
       </div>
 
@@ -438,13 +457,13 @@ const CatProfile = ({ weight, activityLevel, onWeightChange, onAttributeChange }
         min="0.1"
         step="0.1"
       />
-      
+
       <div className="w-full">
         <label className="block text-sm font-medium text-gray-700 mb-1">Cat's Life Stage</label>
         <select
           value={activityLevel}
           onChange={(e) => onAttributeChange(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition-shadow duration-200 shadow-sm bg-white"
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition-shadow duration-200 shadow-sm bg-white text-gray-900"
         >
           <option value="neutered">Neutered Adult</option>
           <option value="intact">Intact Adult</option>
@@ -480,7 +499,7 @@ const CatProfile = ({ weight, activityLevel, onWeightChange, onAttributeChange }
 const MealForm = ({ foods, onAddMeal, showMessage }) => {
   const [mealName, setMealName] = useState('');
   const [caloriePercent, setCaloriePercent] = useState('50');
-  
+
   // This state holds the percentage for each food, always summing to 100
   const [ratios, setRatios] = useState({});
 
@@ -509,10 +528,10 @@ const MealForm = ({ foods, onAddMeal, showMessage }) => {
 
       // If this is the very first food, set it to 100%
       if (foods.length === 1 && Object.values(newRatios)[0] === 0) {
-         newRatios[foods[0].id] = 100;
-         ratiosChanged = true;
+        newRatios[foods[0].id] = 100;
+        ratiosChanged = true;
       }
-      
+
       // If foods were removed and total is now 0, set first food to 100
       const currentTotal = Object.values(newRatios).reduce((s, v) => s + v, 0);
       if (foods.length > 0 && currentTotal < 0.1 && ratiosChanged) {
@@ -533,30 +552,30 @@ const MealForm = ({ foods, onAddMeal, showMessage }) => {
   // Handle simple slider/input changes
   const handleRatioChange = (changedFoodId, newValue) => {
     const newValueNum = parseFloat(newValue) || 0; // Default to 0 if NaN or empty string
-    
+
     setRatios(prev => ({
       ...prev,
       // Clamp value between 0 and 100
       [changedFoodId]: Math.max(0, Math.min(100, newValueNum))
     }));
   };
-  
+
   const totalRatioSum = useMemo(() => {
     return Object.values(ratios).reduce((s, v) => s + v, 0);
   }, [ratios]);
-  
+
   const isTotalValid = useMemo(() => Math.abs(totalRatioSum - 100) < 0.1, [totalRatioSum]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     const percent = parseFloat(caloriePercent);
-    
+
     // Stricter check for 100%
     if (!isTotalValid) {
       showMessage('Total food split must be exactly 100%.', 'error');
       return;
     }
-    
+
     if (isNaN(percent) || percent <= 0 || !mealName) {
       showMessage('Please complete meal name and calorie %.', 'error');
       return;
@@ -584,7 +603,7 @@ const MealForm = ({ foods, onAddMeal, showMessage }) => {
       });
       setRatios(newRatios);
     }
-    
+
     showMessage(`Added "${mealName}" meal`, 'success');
   };
 
@@ -629,7 +648,7 @@ const MealForm = ({ foods, onAddMeal, showMessage }) => {
                   step="1"
                   value={Math.round(ratios[food.id] || 0)}
                   onChange={(e) => handleRatioChange(food.id, e.target.value)}
-                  className="w-20 px-2 py-1 border border-gray-300 rounded-lg text-right focus:ring-blue-500 focus:border-blue-500"
+                  className="w-20 px-2 py-1 border border-gray-300 rounded-lg text-right focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900"
                 />
                 <span className="text-gray-500">%</span>
               </div>
@@ -647,7 +666,7 @@ const MealForm = ({ foods, onAddMeal, showMessage }) => {
           </div>
         ))}
       </div>
-      
+
       {/* Total display */}
       <div className="mt-4 p-3 bg-gray-100 rounded-lg text-center">
         <span className="font-semibold text-gray-700">Total Split</span>
@@ -659,9 +678,9 @@ const MealForm = ({ foods, onAddMeal, showMessage }) => {
         )}
       </div>
 
-      <Button 
-        type="submit" 
-        variant="primary" 
+      <Button
+        type="submit"
+        variant="primary"
         disabled={!isTotalValid}
       >
         Add Meal
@@ -696,7 +715,7 @@ function App() {
       showMessage('Cannot copy details - full nutrient data not available.', 'error');
       return;
     }
-    
+
     // Format as a string object without ID, as requested
     const detailsString = `{ name: '${food.name}', protein: ${food.protein}, fat: ${food.fat}, fibre: ${food.fibre}, ash: ${food.ash}, moisture: ${food.moisture} },`;
 
@@ -757,13 +776,13 @@ function App() {
         const kcalNeededFromFood = mealCalories * split.ratio;
         // Grams = (Kcal needed / Kcal per 100g) * 100
         const grams = (kcalNeededFromFood / food.kcalPer100g) * 100;
-        
+
         return {
           name: food.name,
           grams: grams,
         };
       }).filter(item => item.grams > 0.01); // Don't show 0g items
-      
+
       return {
         ...meal,
         foodAmounts,
@@ -797,7 +816,7 @@ function App() {
               showMessage={showMessage}
               currentFoods={foods}
             />
-            
+
             {/* Divider and manual entry section */}
             <div className="border-t my-6"></div>
             <h4 className="text-lg font-semibold text-gray-700 mb-3">Or Add Manually</h4>
@@ -830,7 +849,7 @@ function App() {
               ))}
             </div>
           </Card>
-          
+
           <Card title="2. Cat's Profile">
             <CatProfile
               weight={catWeight}
@@ -839,7 +858,7 @@ function App() {
               onAttributeChange={setCatActivity}
             />
           </Card>
-          
+
           <Card title="3. Create Meal Plan">
             <MealForm
               foods={foods}
@@ -881,40 +900,40 @@ function App() {
               </div>
             )}
           </Card>
-          
-          <Card title="4. Final Feeding Schedule">
-          {feedingSchedule.length === 0 ? (
-            <p className="text-gray-500">Add your cat's profile and create at least one meal to see the schedule.</p>
-          ) : (
-            <div className="space-y-6">
-              {feedingSchedule.map(meal => (
-                <div key={meal.id} className="p-4 border border-gray-200 rounded-lg bg-green-50">
-                  <h4 className="text-lg font-bold text-green-900">{meal.name}</h4>
-                  <p className="text-sm text-green-700 mb-3">
-                    ({(totalMER * (meal.caloriePercent / 100)).toFixed(0)} Kcal)
-                  </p>
-                  <ul className="space-y-2">
-                    {meal.foodAmounts.map((amount, index) => (
-                      <li key={index} className="flex justify-between items-baseline">
-                        <span className="text-gray-700">{amount.name}</span>
-                        <span className="text-xl font-bold text-green-900">
-                          {amount.grams.toFixed(1)}g
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-              
-              <div className="text-center p-4 bg-gray-100 rounded-lg">
-                <span className="text-sm text-gray-700">Total Daily Amount</span>
-                <h4 className="text-2xl font-bold text-gray-900">
-                  {totalMER.toFixed(0)} <span className="text-lg">Kcal / day</span>
-                </h4>
-              </div>
 
-            </div>
-          )}
+          <Card title="4. Final Feeding Schedule">
+            {feedingSchedule.length === 0 ? (
+              <p className="text-gray-500">Add your cat's profile and create at least one meal to see the schedule.</p>
+            ) : (
+              <div className="space-y-6">
+                {feedingSchedule.map(meal => (
+                  <div key={meal.id} className="p-4 border border-gray-200 rounded-lg bg-green-50">
+                    <h4 className="text-lg font-bold text-green-900">{meal.name}</h4>
+                    <p className="text-sm text-green-700 mb-3">
+                      ({(totalMER * (meal.caloriePercent / 100)).toFixed(0)} Kcal)
+                    </p>
+                    <ul className="space-y-2">
+                      {meal.foodAmounts.map((amount, index) => (
+                        <li key={index} className="flex justify-between items-baseline">
+                          <span className="text-gray-700">{amount.name}</span>
+                          <span className="text-xl font-bold text-green-900">
+                            {amount.grams.toFixed(1)}g
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+
+                <div className="text-center p-4 bg-gray-100 rounded-lg">
+                  <span className="text-sm text-gray-700">Total Daily Amount</span>
+                  <h4 className="text-2xl font-bold text-gray-900">
+                    {totalMER.toFixed(0)} <span className="text-lg">Kcal / day</span>
+                  </h4>
+                </div>
+
+              </div>
+            )}
           </Card>
         </div>
       </div>
@@ -923,10 +942,3 @@ function App() {
 }
 
 export default App;
-
-
-
-
-
-
-
