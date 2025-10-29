@@ -4,14 +4,15 @@ import React, { useState, useMemo, useEffect } from 'react';
 
 // NEW: Predefined food library
 const FOOD_LIBRARY = [
-  { id: 'lib_1', name: 'Generic Dry (Chicken)', protein: 40, fat: 18, fibre: 4, ash: 8, moisture: 8 },
-  { id: 'lib_2', name: 'Generic Wet (Fish Pate)', protein: 12, fat: 8, fibre: 1, ash: 2.5, moisture: 75 },
-  { id: 'lib_3', name: 'Generic Wet (Chunks in Gravy)', protein: 10, fat: 5, fibre: 1.5, ash: 2, moisture: 80 },
-  { id: 'lib_4', name: 'Kitten Dry Food', protein: 42, fat: 20, fibre: 3, ash: 8, moisture: 8 },
-  { id: 'lib_5', name: 'Senior Dry Food', protein: 36, fat: 14, fibre: 5, ash: 7, moisture: 8 },
-  { id: 'lib_6', name: 'Weight Control Dry', protein: 40, fat: 10, fibre: 8, ash: 7.5, moisture: 8 },
-  { id: 'lib_7', name: 'Generic Cat Treats', protein: 30, fat: 15, fibre: 2, ash: 6, moisture: 10 },
+  { id: 'katkin_cluck', name: 'Katkin Cluck', protein: 17.1, fat: 6.5, fibre: 0, ash: 1.9, moisture: 74.6 },
+  { id: 'katkin_moo', name: 'Katkin Moo', protein: 17.2, fat: 10.2, fibre: 0.3, ash: 2.2, moisture: 69.4 },
+  { id: 'katkin_gobble', name: 'Katkin Gobble', protein: 18.1, fat: 4.2, fibre: 0.2, ash: 1.6, moisture: 75.1 },
+  { id: 'katkin_baa', name: 'Katkin Baa', protein: 13.6, fat: 12.6, fibre: 0.1, ash: 2.4, moisture: 70.5 },
+  { id: 'katkin_splash', name: 'Katkin Splash', protein: 16.6, fat: 6.8, fibre: 0, ash: 2.3, moisture: 73.3 },
+  { id: 'katkin_quack', name: 'Katkin Quack', protein: 18.8, fat: 6.2, fibre: 0.1, ash: 2.2, moisture: 72.8 },
+  { id: 'katkin_oink', name: 'Katkin Oink', protein: 17.2, fat: 10.2, fibre: 0.1, ash: 2.4, moisture: 69.9 },
 ];
+
 
 // Calculates Kcal per 100g
 const calculateKcal = (protein, fat, fibre, ash, moisture) => {
@@ -381,12 +382,9 @@ const FoodForm = ({ onAddFood, showMessage }) => {
         <textarea
           value={pasteData}
           onChange={handlePasteChange}
-          placeholder="Paste text from food label here...
-Crude protein 42%
-Fat content 15%
-Crude ash 10%
-..."
-          className="w-full h-24 p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white text-gray-900"
+          placeholder="Paste label text here...
+e.g., 'Protein 42%', 'Fat 15%'"
+          className="w-full min-h-24 max-h-40 p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white text-gray-900 resize-y overflow-y-auto"
         />
       </div>
 
@@ -716,8 +714,8 @@ function App() {
       return;
     }
 
-    // Format as a string object without ID, as requested
-    const detailsString = `{ name: '${food.name}', protein: ${food.protein}, fat: ${food.fat}, fibre: ${food.fibre}, ash: ${food.ash}, moisture: ${food.moisture} },`;
+    // Format as a string object with generated ID
+    const detailsString = `{ id: '${food.name.toLowerCase().replace(/ /g, '_')}', name: '${food.name}', protein: ${food.protein}, fat: ${food.fat}, fibre: ${food.fibre}, ash: ${food.ash}, moisture: ${food.moisture} },`;
 
     // Use a temporary textarea to copy to clipboard (works in iFrames)
     const textArea = document.createElement('textarea');
