@@ -11,6 +11,11 @@ const FOOD_LIBRARY = [
   { id: 'katkin_splash', name: 'Katkin Splash', protein: 16.6, fat: 6.8, fibre: 0, ash: 2.3, moisture: 73.3 },
   { id: 'katkin_quack', name: 'Katkin Quack', protein: 18.8, fat: 6.2, fibre: 0.1, ash: 2.2, moisture: 72.8 },
   { id: 'katkin_oink', name: 'Katkin Oink', protein: 17.2, fat: 10.2, fibre: 0.1, ash: 2.4, moisture: 69.9 },
+  { id: 'orijen_fit_trim_cat', name: 'ORIJEN Fit Trim Cat', protein: 42, fat: 15, fibre: 6, ash: 10, moisture: 10 },
+  { id: 'orijen_original_cat', name: 'ORIJEN Original Cat', protein: 40, fat: 20, fibre: 3, ash: 8, moisture: 10 },
+  { id: 'orijen_six_fish_cat', name: 'ORIJEN Six Fish Cat', protein: 40, fat: 19, fibre: 3, ash: 9, moisture: 10 },
+  { id: 'royal_canin_dental_adult_dry_cat_food', name: 'ROYAL CANIN Dental Adult Dry Cat Food', protein: 29, fat: 15, fibre: 5.4, ash: 6.4, moisture: 8 },
+
 ];
 
 
@@ -205,7 +210,7 @@ const FoodLibrarySelector = ({ onAddFood, showMessage, currentFoods }) => {
 
   const handleAddFromLibrary = (food) => {
     const { protein, fat, fibre, ash, moisture } = food;
-    const { kcal, error } = calculateKcal(protein, fat, fibre, ash, moisture);
+    const { kcal, carbs, error } = calculateKcal(protein, fat, fibre, ash, moisture);
 
     if (error) {
       showMessage(`Error calculating Kcal for ${food.name}: ${error}`, 'error');
@@ -222,6 +227,7 @@ const FoodLibrarySelector = ({ onAddFood, showMessage, currentFoods }) => {
       fibre,
       ash,
       moisture,
+      carbs,
     });
     setShowDropdown(false);
     setSearchTerm('');
@@ -282,31 +288,52 @@ const FoodForm = ({ onAddFood, showMessage }) => {
   const [moisture, setMoisture] = useState('');
   const [pasteData, setPasteData] = useState('');
 
+  const carbohydrate = useMemo(() => {
+    const proteinNum = parseFloat(protein) || 0;
+    const fatNum = parseFloat(fat) || 0;
+    const fibreNum = parseFloat(fibre) || 0;
+    const ashNum = parseFloat(ash) || 0;
+    const moistureNum = parseFloat(moisture) || 0;
+    const total = proteinNum + fatNum + fibreNum + ashNum + moistureNum;
+    if (total > 100.1) {
+      return "Over 100%";
+    }
+    return (100 - total).toFixed(2);
+  }, [protein, fat, fibre, ash, moisture]);
+
   const parsePastedData = (data) => {
     const lines = data.split('\n');
     const keywords = {
-      protein: /protein|protéin/i,
-      fat: /fat|fat content|matières grasses|grasa/i,
-      fibre: /fibre|fiber|cellulose|fibra/i,
-      ash: /ash|cendra|cendres|ceniza/i,
+      protein: /crude protein|protein|protéin/i,
+      fat: /fat content|fat|matières grasses|grasa/i,
+      fibre: /crude fibre|fibre|fiber|cellulose|fibra/i,
+      ash: /crude ash|ash|cendra|cendres|ceniza/i,
       moisture: /moisture|humidité|humedad/i,
     };
 
-    const findValue = (regex) => {
-      for (const line of lines) {
+    const findValue = (regex, lines) => {
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
         if (regex.test(line)) {
-          const match = line.match(/(\d+(\.\d+)?)\s*%/);
+          // Check current line for a value
+          let match = line.match(/(\d+(\.\d+)?)\s*%/);
           if (match) return match[1];
+
+          // If no value, check the next line (if it exists)
+          if (i + 1 < lines.length) {
+            match = lines[i + 1].match(/(\d+(\.\d+)?)\s*%/);
+            if (match) return match[1];
+          }
         }
       }
       return '';
     };
 
-    setProtein(findValue(keywords.protein));
-    setFat(findValue(keywords.fat));
-    setFibre(findValue(keywords.fibre));
-    setAsh(findValue(keywords.ash));
-    setMoisture(findValue(keywords.moisture));
+    setProtein(findValue(keywords.protein, lines));
+    setFat(findValue(keywords.fat, lines));
+    setFibre(findValue(keywords.fibre, lines));
+    setAsh(findValue(keywords.ash, lines));
+    setMoisture(findValue(keywords.moisture, lines));
   };
 
   const handlePasteChange = (e) => {
@@ -354,6 +381,7 @@ const FoodForm = ({ onAddFood, showMessage }) => {
       fibre: fibreNum,
       ash: ashNum,
       moisture: moistureNum,
+      carbs,
     });
 
     // Clear form
@@ -394,45 +422,58 @@ e.g., 'Protein 42%', 'Fat 15%'"
           type="number"
           value={protein}
           onChange={(e) => setProtein(e.target.value)}
-          placeholder="e.g., 42"
+          placeholder=""
           min="0"
           step="0.1"
+          adornment="%"
         />
         <Input
           label="Fat %"
           type="number"
           value={fat}
           onChange={(e) => setFat(e.target.value)}
-          placeholder="e.g., 15"
+          placeholder=""
           min="0"
           step="0.1"
+          adornment="%"
         />
         <Input
           label="Fibre %"
           type="number"
           value={fibre}
           onChange={(e) => setFibre(e.target.value)}
-          placeholder="e.g., 6"
+          placeholder=""
           min="0"
           step="0.1"
+          adornment="%"
         />
         <Input
           label="Ash %"
           type="number"
           value={ash}
           onChange={(e) => setAsh(e.target.value)}
-          placeholder="e.g., 10"
+          placeholder=""
           min="0"
           step="0.1"
+          adornment="%"
         />
         <Input
-          label="Moisture %"
+          label="Moisture - 8% for typical dry food"
           type="number"
           value={moisture}
           onChange={(e) => setMoisture(e.target.value)}
-          placeholder="e.g., 10 (or 8 if dry)"
+          placeholder="8% for typical dry food"
           min="0"
           step="0.1"
+          adornment="%"
+        />
+        <Input
+          label="Carbohydrate % - Calculated"
+          type="text"
+          value={carbohydrate}
+          readOnly
+          inputClassName="bg-gray-200 cursor-not-allowed"
+          adornment="%"
         />
       </div>
       <Button type="submit" variant="primary">Add Food</Button>
@@ -473,18 +514,18 @@ const CatProfile = ({ weight, activityLevel, onWeightChange, onAttributeChange }
         </select>
       </div>
 
-      <div className="text-center p-4 bg-blue-50 rounded-lg space-y-2">
+      <div className="text-center p-4  rounded-lg space-y-2">
         <div className="flex justify-around items-center">
-          <div>
+          <div className="bg-blue-100 p-2 rounded-lg">
             <span className="text-sm text-blue-700">Daily RER</span>
             <h4 className="text-2xl font-bold text-blue-900">
               {rer.toFixed(0)} <span className="text-lg">Kcal</span>
             </h4>
           </div>
-          <div>
-            <span className="text-sm text-blue-700">Daily MER</span>
-            <h4 className="text-3xl font-bold text-blue-900">
-              {mer.toFixed(0)} <span className="text-xl">Kcal</span>
+          <div className="bg-green-100 p-2 rounded-lg">
+            <span className="text-sm text-green-700">Daily MER</span>
+            <h4 className="text-2xl font-bold text-green-900">
+              {mer.toFixed(0)} <span className="text-lg">Kcal</span>
             </h4>
           </div>
         </div>
@@ -715,7 +756,7 @@ function App() {
     }
 
     // Format as a string object with generated ID
-    const detailsString = `{ id: '${food.name.toLowerCase().replace(/ /g, '_')}', name: '${food.name}', protein: ${food.protein}, fat: ${food.fat}, fibre: ${food.fibre}, ash: ${food.ash}, moisture: ${food.moisture} },`;
+    const detailsString = `{ id: '${food.name.toLowerCase().replace(/ /g, '_')}', name: '${food.name}', protein: ${food.protein}, fat: ${food.fat}, fibre: ${food.fibre}, ash: ${food.ash}, moisture: ${food.moisture}, carbs: ${food.carbs.toFixed(2)} },`;
 
     // Use a temporary textarea to copy to clipboard (works in iFrames)
     const textArea = document.createElement('textarea');
@@ -820,31 +861,48 @@ function App() {
             <h4 className="text-lg font-semibold text-gray-700 mb-3">Or Add Manually</h4>
             <FoodForm onAddFood={handleAddFood} showMessage={showMessage} />
 
-            <div className="mt-6 space-y-2">
-              {foods.length === 0 && (
+            <div className="mt-6 overflow-x-auto">
+              {foods.length === 0 ? (
                 <p className="text-gray-500 text-center p-2">Your added foods will appear here.</p>
+              ) : (
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                      <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Kcal/100g</th>
+                      <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Carbs</th>
+                      <th scope="col" className="relative px-6 py-3">
+                        <span className="sr-only">Remove</span>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {foods.map(food => (
+                      <tr 
+                        key={food.id} 
+                        className="hover:bg-gray-100 cursor-pointer"
+                        onClick={() => handleCopyDetails(food)}
+                        title="Copy details as code"
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{food.name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">{food.kcalPer100g.toFixed(0)}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">{food.carbs !== undefined ? `${food.carbs.toFixed(1)}%` : 'N/A'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteFood(food.id);
+                            }}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               )}
-              {foods.map(food => (
-                <div key={food.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                  <span className="font-medium text-gray-800">{food.name}</span>
-                  <div className="text-right flex items-center space-x-2">
-                    <span className="text-sm font-bold text-gray-600">{food.kcalPer100g.toFixed(0)} Kcal/100g</span>
-                    <button
-                      onClick={() => handleCopyDetails(food)}
-                      className="text-blue-500 hover:text-blue-700 text-sm font-semibold"
-                      title="Copy details as code"
-                    >
-                      Copy
-                    </button>
-                    <button
-                      onClick={() => deleteFood(food.id)}
-                      className="text-red-500 hover:text-red-700 text-sm font-semibold"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                </div>
-              ))}
             </div>
           </Card>
 
@@ -873,7 +931,7 @@ function App() {
                     </div>
                     <button
                       onClick={() => deleteMeal(meal.id)}
-                      className="text-red-500 hover:text-red-700 text-sm font-semibold"
+                      className="bg-red-100 hover:bg-red-200 text-red-800 text-sm font-bold py-1 px-2 rounded"
                     >
                       Remove
                     </button>
