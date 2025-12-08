@@ -286,38 +286,17 @@ const FoodForm = ({ onAddFood, showMessage }) => {
   }, [protein, fat, fibre, ash, moisture]);
 
   const parsePastedData = (data) => {
-    const lines = data.split('\n');
-    const keywords = {
-      protein: /crude protein|protein|protéin/i,
-      fat: /fat content|fat|matières grasses|grasa/i,
-      fibre: /crude fibre|fibre|fiber|cellulose|fibra/i,
-      ash: /crude ash|ash|cendra|cendres|ceniza/i,
-      moisture: /moisture|humidité|humedad/i,
+    const findValue = (nutrient) => {
+      const regex = new RegExp(`(?:${nutrient})[^\\d]*(\\d+(?:\\.\\d+)?)`, 'i');
+      const match = data.match(regex);
+      return match ? match[1] : '';
     };
 
-    const findValue = (regex, lines) => {
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        if (regex.test(line)) {
-          // Check current line for a value
-          let match = line.match(/(\d+(\.\d+)?)\s*%/);
-          if (match) return match[1];
-
-          // If no value, check the next line (if it exists)
-          if (i + 1 < lines.length) {
-            match = lines[i + 1].match(/(\d+(\.\d+)?)\s*%/);
-            if (match) return match[1];
-          }
-        }
-      }
-      return '';
-    };
-
-    setProtein(findValue(keywords.protein, lines));
-    setFat(findValue(keywords.fat, lines));
-    setFibre(findValue(keywords.fibre, lines));
-    setAsh(findValue(keywords.ash, lines));
-    setMoisture(findValue(keywords.moisture, lines));
+    setProtein(findValue('crude protein|protein|protéin'));
+    setFat(findValue('fat content|fat|matières grasses|grasa'));
+    setFibre(findValue('crude fibre|fibre|fiber|cellulose|fibra'));
+    setAsh(findValue('crude ash|ash|cendra|cendres|ceniza'));
+    setMoisture(findValue('moisture|humidité|humedad'));
   };
 
   const handlePasteChange = (e) => {
