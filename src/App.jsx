@@ -707,8 +707,17 @@ function App() {
       return;
     }
 
-    // Format as a string object with generated ID
-    const detailsString = `{ id: '${food.name.toLowerCase().replace(/ /g, '_')}', name: '${food.name}', protein: ${food.protein}, fat: ${food.fat}, fibre: ${food.fibre}, ash: ${food.ash}, moisture: ${food.moisture}, carbs: ${food.carbs.toFixed(2)} },`;
+    // Format as JSON matching the foodLibrary.json format
+    const foodData = {
+      id: food.name.toLowerCase().replace(/ /g, '_'),
+      name: food.name,
+      protein: food.protein,
+      fat: food.fat,
+      fibre: food.fibre,
+      ash: food.ash,
+      moisture: food.moisture
+    };
+    const detailsString = JSON.stringify(foodData);
 
     // Use a temporary textarea to copy to clipboard (works in iFrames)
     const textArea = document.createElement('textarea');
